@@ -1,0 +1,16 @@
+#separator \x09
+#set_separator	,
+#empty_field	(empty)
+#unset_field	-
+#path	conn
+#open	2025-06-28-13-45-00
+#fields	ts	uid	id.orig_h	id.orig_p	id.resp_h	id.resp_p	proto	service	duration	orig_bytes	resp_bytes	conn_state	local_orig	local_resp	missed_bytes	history	orig_pkts	orig_ip_bytes	resp_pkts	resp_ip_bytes	tunnel_parents
+#types	time	string	addr	port	addr	port	enum	string	interval	count	count	string	bool	bool	count	string	count	count	count	count	set[string]
+1624893372.651552	C8F46F1E4C56B06C	192.168.1.10	53325	172.217.166.78	443	tcp	ssl	0.051114	234	478	SF	-	-	0	ShADadf	6	462	5	478	-
+1624893372.702668	C8F46F1E4C56B06D	192.168.1.11	53326	172.217.166.79	443	tcp	ssl	0.045511	512	324	SF	-	-	0	ShADadf	8	502	6	389	-
+1624893373.145114	C8F46F1E4C56B06E	192.168.1.12	53327	93.184.216.34	80	tcp	http	0.112415	1024	2048	SF	-	-	0	ShADadf	10	1020	9	2045	-
+1751386000.000001	CUSTOMUID1	10.10.10.10	12345	8.8.8.8	9999	xyz	unknown	0.001	9999	9999	S0	-	-	0	Sh	1	9999	1	9999	-
+1751386000.000002	CUSTOMUID2	172.16.0.1	54321	192.168.0.1	8888	abc	unknown	0.002	8888	8888	S0	-	-	0	Sh	1	8888	1	8888	-
+1751386000.000003	CUSTOMUID3	1.2.3.4	11111	5.6.7.8	2222	tcp	unknown	0.003	2222	2222	S0	-	-	0	Sh	1	2222	1	2222	-
+1751386000.000004	CUSTOMUID4	192.168.1.100	80	192.168.1.101	81	udp	unknown	0.004	81	80	S0	-	-	0	Sh	1	81	1	80	-
+1751386000.000005	CUSTOMUID5	172.31.255.255	65535	10.0.0.255	1	icmp	unknown	0.005	65535	1	S0	-	-	0	Sh	1	65535	1	1	-

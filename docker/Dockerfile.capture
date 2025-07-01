@@ -1,0 +1,4 @@
+FROM python:3.10-slim
+RUN pip install pyshark kafka-python
+COPY packet_capture/sniffer.py /app/sniffer.py
+CMD ["python", "/app/sniffer.py"]

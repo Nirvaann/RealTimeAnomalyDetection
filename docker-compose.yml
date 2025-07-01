@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    depends_on:
+      - zookeeper
+
+  sniffer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.sniffer
+    depends_on:
+      - kafka
+    cap_add:
+      - NET_ADMIN  # Needed for packet sniffing
+
+  processor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.processor
+    depends_on:
+      - kafka
+
+  ml:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ml
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    volumes:
+      - ./ml_service:/app
+    depends_on:
+      - kafka
+
+  responder:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.responder
+    volumes:
+      - ./responder/config:/app/config
+    depends_on:
+      - kafka
+    cap_add:
+      - NET_ADMIN
+
+  zeek_ingestor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.zeek
+    volumes:
+      - ./zeek_ingestor/zeek_logs:/app/zeek_logs
+    depends_on:
+      - kafka

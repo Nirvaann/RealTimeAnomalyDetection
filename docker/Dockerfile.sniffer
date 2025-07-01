@@ -1,0 +1,10 @@
+FROM python:3.10-bookworm
+
+RUN apt-get update && \
+    apt-get install -y tshark && \
+    pip install pyshark kafka-python
+
+WORKDIR /app
+COPY packet_capture/sniffer.py .
+
+ENTRYPOINT ["python", "sniffer.py"]
