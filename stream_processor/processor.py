@@ -3,7 +3,7 @@
 import time
 import socket
 import json
-from kafka import KafkaConsumer, KafkaProducer
+from kafka import KafkaConsumer, KafkaProducer, errors
 
 def wait_for_kafka(host="kafka", port=9092, timeout=60):
     start = time.time()
@@ -20,13 +20,22 @@ def wait_for_kafka(host="kafka", port=9092, timeout=60):
 
 wait_for_kafka()
 
-consumer = KafkaConsumer(
+def create_consumer_with_retry(*args, **kwargs):
+    for i in range(10):
+        try:
+            return KafkaConsumer(*args, **kwargs)
+        except errors.NoBrokersAvailable:
+            print("Kafka not ready, retrying in 5 seconds...")
+            time.sleep(5)
+    raise RuntimeError("Kafka not available after multiple retries.")
+
+consumer = create_consumer_with_retry(
     'raw_packets',
     bootstrap_servers='kafka:9092',
     value_deserializer=lambda x: json.loads(x.decode('utf-8')),
-    auto_offset_reset='earliest',  # Start from latest messages if no committed offset
+    auto_offset_reset='earliest',
     enable_auto_commit=True,
-    group_id='processor-group'   # Add a group id for offset management
+    group_id='processor-group'
 )
 
 producer = KafkaProducer(bootstrap_servers='kafka:9092',
@@ -38,30 +47,30 @@ def is_internal(ip):
     return ip.startswith(INTERNAL_IP_PREFIX)
 
 def enrich_packet(packet):
-    # Lateral movement detection
-    if is_internal(packet['src_ip']) and is_internal(packet['dst_ip']):
-        packet['potential_lateral_movement'] = True
-    # TTL anomaly detection
-    if packet.get('ttl', 64) < 10:
-        packet['low_ttl_alert'] = True
-    # Unknown protocol detection
-    if packet['protocol'] not in ['TCP', 'UDP', 'ICMP']:
-        packet['unknown_protocol'] = True
+    packet['potential_lateral_movement'] = int(
+        packet.get('potential_lateral_movement', 0) or (
+            is_internal(packet['src_ip']) and is_internal(packet['dst_ip'])
+        )
+    )
+    packet['low_ttl_alert'] = int(
+        packet.get('low_ttl_alert', 0) or (packet.get('ttl', 64) < 10)
+    )
+    packet['unknown_protocol'] = int(
+        packet.get('unknown_protocol', 0) or (packet['protocol'] not in ['TCP', 'UDP', 'ICMP'])
+    )
     packet['enriched'] = True
     return packet
-
-
 
 max_messages = 10
 count = 0
 try:
     for msg in consumer:
-        print(f"Received from raw_packets: {msg.value}")  # Show received message
+        print(f"Received from raw_packets: {msg.value}")
         enriched = enrich_packet(msg.value)
         try:
             producer.send('processed_packets', value=enriched)
             producer.flush()
-            print(f"Sent to processed_packets: {enriched}")  # Show sent message
+            print(f"Sent to processed_packets: {enriched}")
         except Exception as e:
             print(f"Error sending to Kafka: {e}")
         count += 1

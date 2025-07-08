@@ -1,5 +1,5 @@
 {
-  "anomaly_score_threshold": 0.2,
+  "anomaly_score_threshold": 0.7,
   "response_actions": {
     "block_ip": true,
     "log_only": false

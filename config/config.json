@@ -1,5 +1,5 @@
 {
-  "anomaly_score_threshold": 0.85,
+  "anomaly_score_threshold": 0.7,
   "blacklisted_ips": [
     "185.234.219.56",
     "45.67.230.10",

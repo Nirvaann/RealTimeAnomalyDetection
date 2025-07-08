@@ -5,6 +5,8 @@ services:
     image: wurstmeister/zookeeper
     ports:
       - "2181:2181"
+    environment:
+      ZOO_LOG4J_PROP: "ERROR,CONSOLE"
 
   kafka:
     image: wurstmeister/kafka
@@ -13,8 +15,17 @@ services:
     environment:
       KAFKA_ADVERTISED_HOST_NAME: kafka
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LOG4J_OPTS: "-Dlog4j.configuration=file:/kafka/config/log4j.properties"
+    volumes:
+      - ./config/log4j.properties:/kafka/config/log4j.properties
     depends_on:
       - zookeeper
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 
   sniffer:
     build:
@@ -68,3 +79,20 @@ services:
       - ./zeek_ingestor/zeek_logs:/app/zeek_logs
     depends_on:
       - kafka
+
+  train:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.train
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    volumes:
+      - ./ml_model:/app
+      - ./ml_service:/ml_service
+    profiles: ["manual"]
